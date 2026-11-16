@@ -7,6 +7,9 @@ touch LICENSE
 touch pyproject.toml
 touch README.md
 
+src/doc2sqlite/core.py -c config.yaml 
+
+
 
 python -m pip install --upgrade build twine
 

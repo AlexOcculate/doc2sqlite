@@ -1,40 +1,41 @@
-InputPdf: "/Users/Shared/__PYTHON__/__FastAPI/doc2sqlite_root/Complete-PV-list.pdf"
+InputPdf: "/Users/Shared/--BOOKS--/Manning/pdf/From_Scratch/Build_a_Large_Language_Model_From_Scratch.pdf"
+
 # OutputDb: "output.db"
 # Log: "stdout"
 
 DocumentInfo: true
 DocumentToC: true
 PagePhysical2Label: true
-PageText: true
-
-DocumentPageLabel: true
-##DocEmbeddedFileInfo: true
-PageAnnotation: true
+PageText: false
+#
 PageFont: true
 DocumentFont: true
+#
 PageLink: true
 DocumentLink: true
+#
+DocumentPageLabel: false
+DocEmbeddedFileInfo: false
+PageAnnotation: false
 PageBlock: true
 PageKG: true
 PageBlockFTS: true
-PageHtml: true
-PageXHtml: true
-PageXml: true
-
+PageHtml: false
+PageXHtml: false
+PageXml: false
+#
 PageWord: true
 PageWordFrequency: true
 DocumentWordFrequency: true
-
-PageDict: true
-PageRawDict: true
-PageJson: true
-PageRawJson: true
-PageSvg: true
-PageSvgTextAsPath: true
-PageTable: true
-PageImageInfo: true
-PageImage: true
-PagePixmap: true
-PageDrawings: true
-
-
+#
+PageDict: false
+PageRawDict: false
+PageJson: false
+PageRawJson: false
+PageSvg: false
+PageSvgTextAsPath: false
+PageTable: false
+PageImageInfo: false
+PageImage: false
+PagePixmap: false
+PageDrawings: false

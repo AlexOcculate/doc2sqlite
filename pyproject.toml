@@ -25,9 +25,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/ZeroingVoid/doc2sqlite"
-Repository = "https://github.com/ZeroingVoid/doc2sqlite"
-Documentation = "https://ZeroingVoid.github.io/doc2sqlite"
+Homepage = "https://github.com/AlexOcculate/doc2sqlite"
+Repository = "https://github.com/AlexOcculate/doc2sqlite"
+Documentation = "https://github.com/AlexOcculate/doc2sqlite"
 
 [tool.setuptools.packages.find]
 where = ["src"]

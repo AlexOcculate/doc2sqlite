@@ -14,7 +14,6 @@ DocumentFont: true
 PageLink: true
 DocumentLink: true
 #
-
 DocumentPageLabel: false
 DocEmbeddedFileInfo: false
 PageAnnotation: false
@@ -24,11 +23,11 @@ PageBlockFTS: true
 PageHtml: false
 PageXHtml: false
 PageXml: false
-
+#
 PageWord: true
 PageWordFrequency: true
 DocumentWordFrequency: true
-
+#
 PageDict: false
 PageRawDict: false
 PageJson: false
