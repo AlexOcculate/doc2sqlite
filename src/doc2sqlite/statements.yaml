@@ -1,0 +1,2418 @@
+DocumentInfo:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: dm
+    DEFAULT: True
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      DOCUMENT_INFO
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      DOCUMENT_INFO
+      (
+      DOC_ID            TEXT,
+      NAME              TEXT,
+      PAGE_COUNT        INTEGER,
+      CHAPTER_COUNT     INTEGER,
+      PERMISSIONS       INTEGER,
+      IS_CLOSED         BOOLEAN,
+      IS_DIRT           BOOLEAN,
+      IS_PDF            BOOLEAN,
+      IS_ENCRYPTED      BOOLEAN,
+      IS_REPAIRED       BOOLEAN,
+      IS_REFLOWABLE     BOOLEAN,
+      IS_FORM_PDF       BOOLEAN,
+      IS_FAST_WEBACCESS BOOLEAN, 
+      NEED_PASS         BOOLEAN,
+      VERSION_COUNT     INTEGER,
+      PAGELAYOUT        TEXT,
+      PAGEMODE          TEXT,
+      SIGNATURE_FIELDS  INTEGER,
+      EMBFILE_COUNT     INTEGER,
+      HAS_ANNOTS        BOOLEAN,
+      HAS_LINKS         BOOLEAN,
+      XML_METADATA      TEXT,
+      MARKINFO          TEXT,
+      OUTLINE           TEXT,
+      METADATA          TEXT,
+      LAST_LOCATION     TEXT,
+      FORMFONTS         TEXT
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      DOCUMENT_INFO
+      ( DOC_ID
+      , NAME
+      , PAGE_COUNT
+      , CHAPTER_COUNT
+      , PERMISSIONS
+      , IS_CLOSED
+      , IS_DIRT
+      , IS_PDF
+      , IS_ENCRYPTED
+      , IS_REPAIRED
+      , IS_REFLOWABLE
+      , IS_FORM_PDF
+      , IS_FAST_WEBACCESS
+      , NEED_PASS
+      , VERSION_COUNT
+      , PAGELAYOUT
+      , PAGEMODE
+      , SIGNATURE_FIELDS
+      , EMBFILE_COUNT
+      , HAS_ANNOTS
+      , HAS_LINKS
+      , XML_METADATA
+      , MARKINFO
+      , OUTLINE
+      , METADATA
+      , LAST_LOCATION
+      , FORMFONTS
+      )
+      VALUES
+      ( ?, ?, ?, ?, ?
+      , ?, ?, ?, ?, ?
+      , ?, ?, ?, ?, ?
+      , ?, ?, ?, ?, ?
+      , ?, ?, ?, ?, ?
+      , ?, ?
+      )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      entry = (
+          None,  # DOC_ID - unique identifier
+          doc.name,  # NAME - document filename
+          doc.page_count,  # PAGE_COUNT - total pages (int)
+          doc.chapter_count,  # CHAPTER_COUNT - number of chapters (int)
+          doc.permissions,  # PERMISSIONS - permission flags (int)
+          doc.is_closed,  # IS_CLOSED - closed/finalized status (bool)
+          doc.is_dirty,
+          doc.is_pdf,  # IS_PDF - format type (bool)
+          doc.is_encrypted,  # IS_ENCRYPTED - password protected (bool)
+          doc.is_repaired,  # IS_REPAIRED - repair was applied (bool)
+          doc.is_reflowable,  # IS_REFLOWABLE - reflowable format (bool)
+          doc.is_form_pdf,  # IS_FORM_PDF - interactive form (bool)
+          doc.is_fast_webaccess,
+          doc.needs_pass,  # NEED_PASS - password required (bool)
+          doc.version_count,  # VERSION_COUNT - incremental versions (int)
+          doc.pagelayout,  # PAGELAYOUT - page layout mode (str)
+          doc.pagemode,  # PAGEMODE - initial display mode (str)
+          doc.get_sigflags(),  # SIGNATURE_FIELDS - number of signatures (int)
+          doc.embfile_count(),  # EMBFILE_COUNT - embedded files count (int)
+          doc.has_annots(),  # HAS_ANNOTS - has annotations (bool)
+          doc.has_links(),  # HAS_LINKS - has hyperlinks (bool)
+          doc.get_xml_metadata(),  # XML_METADATA - XMP metadata (str)
+          str(doc.markinfo),  # MARKINFO - stringified mark dict (str)
+          str(doc.outline),
+          str(doc.metadata),
+          str(doc.last_location),
+          str(doc.FormFonts),
+      )
+      ####### self.data.append(entry)
+
+DocumentMetadata:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: dm
+    DEFAULT: True
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      DOCUMENT_METADATA
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      DOCUMENT_METADATA
+      ( METADATA TEXT )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      DOCUMENT_METADATA
+      ( METADATA )
+      VALUES( ? )
+
+  DQL: null
+
+DocumentPageLabel:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: dpl
+    DEFAULT: True
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      DOCUMENT_PAGE_LABEL
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      DOCUMENT_PAGE_LABEL
+      ( STARTPAGE    INTEGER
+      , PREFIX       TEXT
+      , FIRSTPAGENUM INTEGER
+      , STYLE        TEXT
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      DOCUMENT_PAGE_LABEL
+      ( STARTPAGE
+      , PREFIX
+      , FIRSTPAGENUM
+      , STYLE
+      ) VALUES (?, ?, ?, ?)
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      # type: list[{'startpage': int, 'prefix': str, 'style': str, 'firstpagenum': int}]
+      page_labels = doc.get_page_labels()
+
+      # {'startpage': int, 'prefix': str, 'style': str, 'firstpagenum': int}
+      for pl in page_labels:
+          entry = (
+              pl["startpage"],  # type: int
+              pl["prefix"],  # type: str
+              pl["firstpagenum"],  # type: int
+              pl.get("style", None),  # type: str
+          )
+          self.data.append(entry)
+
+DocumentToC:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: dtoc
+    DEFAULT: false
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      DOCUMENT_TOC
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      DOCUMENT_TOC
+      ( RID              INTEGER PRIMARY KEY AUTOINCREMENT
+      , LEVEL            INTEGER
+      , PAGE_1BASED      INTEGER
+      , TITLE            TEXT
+      , DEST_KIND        INTEGER
+      , DEST_KIND_NAME   TEXT
+      , DEST_FILE        TEXT
+      , DEST_PAGE_0BASED INTEGER
+      , DEST_ZOOM        REAL
+      , DEST_XREF        INTEGER
+      , DEST_VIEW        TEXT
+      , DEST_COLOR       TEXT
+      , DEST_BOLD        INTEGER
+      , DEST_ITALIC      INTEGER
+      , DEST_COLLAPSE    INTEGER
+      , DEST_NAMEDDEST   TEXT
+      , DEST_TO_X        REAL
+      , DEST_TO_Y        REAL
+      , DEST_RAW         TEXT
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      DOCUMENT_TOC
+      ( LEVEL
+      , PAGE_1BASED
+      , TITLE
+      , DEST_KIND
+      , DEST_KIND_NAME
+      , DEST_FILE
+      , DEST_PAGE_0BASED
+      , DEST_ZOOM
+      , DEST_XREF
+      , DEST_VIEW
+      , DEST_COLOR
+      , DEST_BOLD
+      , DEST_ITALIC
+      , DEST_COLLAPSE
+      , DEST_NAMEDDEST
+      , DEST_TO_X
+      , DEST_TO_Y
+      , DEST_RAW
+      ) VALUES (
+        ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?,
+        ?, ?, ?
+      )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      # type: list[tuple[lvl:int, title:str, page:int, dest:dic[]]]
+      toc = doc.get_toc(False)
+
+      LINK_DESTINATION_KINDS = [
+          "LINK_NONE",  # 0 – No destination. Indicates a dummy link.
+          "LINK_GOTO",  # 1 – Points to a place in this document.
+          "LINK_URI",  # 2 – Points to a URI – typically a resource specified with internet syntax.
+          # - PyMuPDF treats any external link that contains a colon and does not start
+          # with 'file:' as LINK_URI.
+          "LINK_LAUNCH",  # 3 – Launch (open) another file (of any “executable” type).
+          # - PyMuPDF treats any external link that starts with 'file:' or doesn’t
+          #   contain a colon, as LINK_LAUNCH.
+          "LINK_NAMED",  # 4 – points to a named location.
+          "LINK_GOTOR",  # 5 – Points to a place in another PDF document.
+      ]
+
+      for tocEntry in toc:
+          level, title, page, dest = tocEntry
+
+          dest_kind = None
+          dest_kind_name = None
+          dest_file = None
+          dest_page_0based = None
+          dest_to = None
+          dest_zoom = None
+          dest_xref = None
+          dest_color = None
+          dest_view = None
+          dest_bold = None
+          dest_italic = None
+          dest_collapse = None
+          dest_nameddest = None
+          dest_to_x = None
+          dest_to_y = None
+
+          if dest is not None:
+              dest_kind = dest.get("kind")
+              dest_kind_name = (
+                  LINK_DESTINATION_KINDS[dest_kind]
+                  if dest_kind is not None and 0 <= dest_kind <= 5
+                  else "UNKNOWN"
+              )
+
+              dest_file = dest.get("file")
+              dest_page_0based = dest.get("page")
+              dest_zoom = dest.get("zoom")
+              dest_xref = dest.get("xref")
+              dest_view = dest.get("view")
+              dest_color = str(dest.get("color"))
+              dest_bold = dest.get("bold")
+              dest_italic = dest.get("italic")
+              dest_collapse = dest.get("collapse")
+              dest_nameddest = dest.get("nameddest")
+
+              dest_to = dest.get("to")
+              if dest_to is not None:
+                  dest_to_x = dest_to.x
+                  dest_to_y = dest_to.y
+
+          entry = (
+              level,  # type: int
+              page,  # type: int
+              title,  # type: str
+              dest_kind,
+              dest_kind_name,
+              dest_file,
+              dest_page_0based,
+              dest_zoom,
+              dest_xref,
+              dest_view,
+              dest_color,
+              dest_bold,
+              dest_italic,
+              dest_collapse,
+              dest_nameddest,
+              dest_to_x,
+              dest_to_y,
+              str(dest),  # type: str
+          )
+          self.data.append(entry)
+
+      flush_logger(self.cfg.logger)
+
+PagePhysical2Label:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: pp2l
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_PHYSICAL2LABEL
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      PAGE_PHYSICAL2LABEL
+      ( PAGE_PHYSICAL_NUMBER INTEGER NOT NULL
+      , PAGE_LABEL  TEXT
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      PAGE_PHYSICAL2LABEL
+      ( PAGE_PHYSICAL_NUMBER, PAGE_LABEL) VALUES ( ?, ? )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      entry = (page.number, page.get_label())
+      self.data.append(entry)
+
+      pass
+
+PageFont:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: pf
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_FONT
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      PAGE_FONT
+      ( PAGE_PHYSICAL_NUMBER INTEGER NOT NULL
+      , XREF        INTEGER
+      , EXT         TEXT
+      , TYPE        TEXT
+      , BASEFONT    TEXT
+      , NAME        TEXT
+      , ENCODING    TEXT
+      , REFERENCER  INTEGER
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      PAGE_FONT
+      ( PAGE_PHYSICAL_NUMBER
+      , XREF
+      , EXT
+      , TYPE
+      , BASEFONT
+      , NAME
+      , ENCODING
+      , REFERENCER
+      )
+      VALUES 
+      ( ?, ?, ?, ?, ?, ?, ?, ? )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      # list[ (xref, ext, type, basefont, name, encoding, referencer) ]
+      font_list = page.get_fonts(full=True)
+
+      # (xref, ext, type, basefont, name, encoding, referencer)
+      for font in font_list:
+
+          xref = ext = type = basefont = name = encoding = referencer = None
+          xref, ext, type, basefont, name, encoding, referencer = font
+
+          entry = (
+              page.number,
+              xref,
+              ext,
+              type,
+              basefont,
+              name,
+              encoding,
+              (  # referencer, default to 0 if missing
+                  referencer if len(font) > 6 else 0
+              ),
+          )
+          self.data.append(entry)
+
+      pass
+
+DocumentFont:
+  RMK: see PageFont["NAME"]
+
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: df
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP VIEW IF EXISTS
+      DOCUMENT_FONT
+
+    CREATE: |
+      CREATE VIEW
+      DOCUMENT_FONT
+      AS
+        SELECT COUNT(1) PAGES
+            , T.XREF, T.EXT , T."TYPE" , T.BASEFONT , T.NAME
+          FROM PAGE_FONT T
+      GROUP BY T.XREF, T.EXT , T."TYPE" , T.BASEFONT , T.NAME
+
+  DML: null
+
+  DQL: null
+
+DocumentUniqueFont:
+  RMK: see PageFont["NAME"]
+
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: duf
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP VIEW IF EXISTS
+      DOCUMENT_UNIQUE_FONT
+
+    CREATE: |
+      CREATE VIEW
+      DOCUMENT_UNIQUE_FONT
+      AS
+        SELECT SUM(T.PAGES) AS PAGES
+             , T.BASEFONT
+          FROM DOCUMENT_FONT T
+      GROUP BY T.BASEFONT
+
+  DML: null
+
+  DQL: null
+
+PageLink:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: pl
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_LINK
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      PAGE_LINK    
+      ( PAGE_PHYSICAL_NUMBER INTEGER NOT NULL
+      , LINK_ID     TEXT
+      , KIND_CODE   INTEGER
+      , KIND_NAME   TEXT
+      , FROM_RECT   TEXT
+      , TO_PAGE     TEXT
+      , TO_POINT    TEXT
+      , FILE        TEXT
+      , URI         TEXT
+      , XREF        INTEGER
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      PAGE_LINK
+      ( PAGE_PHYSICAL_NUMBER
+      , LINK_ID
+      , KIND_CODE
+      , KIND_NAME
+      , FROM_RECT
+      , TO_PAGE
+      , TO_POINT
+      , FILE
+      , URI
+      , XREF
+      )
+      VALUES ( 
+        ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?
+      )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      # list[dict[str, str]]
+      page_links = page.get_links()
+
+      # dict[str, str]
+      for page_link in page_links:
+
+          # Point|str or None
+          to_page = page_link.get("to", None)
+          to_page = str(to_page) if to_page is not None else None
+
+          page_link_kind_dest_code = page_link["kind"]
+          page_link_kind_dest_name = {
+              0: "LINK_NONE",
+              1: "LINK_GOTO",
+              2: "LINK_URI",
+              3: "LINK_LAUNCH",
+              4: "LINK_NAMED",
+              5: "LINK_GOTOR",
+          }.get(page_link_kind_dest_code, "unknown")
+
+          entry = (
+              page.number,  # 01 : type: int
+              page_link["id"] if "id" in page_link else None,
+              page_link_kind_dest_code,  # 03 : type int
+              page_link_kind_dest_name,  # 04 : type str
+              str("from"),  # 05 : type Rect
+              page_link.get("page", None),  # 06 : type int or None
+              to_page,  # 07 : type Point|str or None
+              page_link.get("file", None),  # 08 : type str or None
+              page_link.get("uri", None),  # 09 : type str or None
+              page_link["xref"],  # 10 : type int
+          )
+          self.data.append(entry)
+
+      pass
+
+DocumentLink:
+  RMK: see PageLink["NAME"]
+
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: dl
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP VIEW IF EXISTS
+      DOCUMENT_LINK
+
+    CREATE: |
+      CREATE VIEW
+      DOCUMENT_LINK
+      AS
+      SELECT COUNT(1) PAGES, T.URI
+      FROM PAGE_LINK T
+      GROUP BY T.URI
+
+  DML: null
+
+  DQL: null
+
+PageBlock:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: pb
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_BLOCK
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      PAGE_BLOCK
+      ( PAGE_PHYSICAL_NUMBER     INTEGER NOT NULL
+      , BLOCK_TYPE_CODE INTEGER
+      , BLOCK_TYPE_NAME TEXT
+      , BLOCK_NO        INTEGER
+      , BLOCK_TEXT      TEXT
+      , LOWERED_TEXT    TEXT GENERATED ALWAYS AS (lower(BLOCK_TEXT)) VIRTUAL
+      , TEXT_LEN        INTEGER GENERATED ALWAYS AS (length(BLOCK_TEXT)) VIRTUAL
+      , X0              REAL
+      , Y0              REAL
+      , X1              REAL
+      , Y1              REAL
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      PAGE_BLOCK
+      ( PAGE_PHYSICAL_NUMBER
+      , BLOCK_TYPE_CODE
+      , BLOCK_TYPE_NAME
+      , BLOCK_NO
+      , BLOCK_TEXT
+      , X0, Y0, X1, Y1
+      ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      flags = (
+          #  If set, then images will be stored in the TextPage.
+          #  This causes the presence of (usually large!) binary image content in the
+          #  output of text extractions of types:
+          #  “blocks”, “dict”, “json”, “rawdict”, “rawjson”, “html”, and “xhtml”
+          #  and is the default there.
+          #  If used with “blocks” however, only image metadata will be returned,
+          #  not the image itself.
+          pymupdf.TEXT_PRESERVE_IMAGES
+          # | pymupdf.TEXT_COLLECT_VECTORS
+          | pymupdf.TEXTFLAGS_BLOCKS
+          | pymupdf.TEXT_DEHYPHENATE
+          # | pymupdf.TEXTFLAGS_DICT
+          | pymupdf.TEXT_COLLECT_STYLES
+      )
+      # Page level... May include TEXT AND IMAGES.
+      # (x0, y0, x1, y1, "lines in the block", block_no, block_type)
+      page_blocks: str = page.get_text("blocks", flags=flags, sort=True)
+
+      # dict[str, str]
+      for block in page_blocks:
+
+          x0 = y0 = x1 = y1 = block_text = block_no = block_type = None
+          x0, y0, x1, y1, block_text, block_no, block_type = block
+
+          entry = (
+              page.number,  # 1
+              block_type,  # 2
+              ({0: "TEXT", 1: "IMAGE"}.get(block_type, "UNKNOWN")),  # 3
+              block_no,  # 4
+              block_text,  # 5
+              x0,  # 6
+              y0,  # 7
+              x1,  # 8
+              y1,  # 9
+          )
+          self.data.append(entry)
+
+      pass
+
+PageBlockFTS:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: pbfts
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_BLOCK_FTS
+
+    CREATE: |
+      CREATE VIRTUAL TABLE IF NOT EXISTS
+      PAGE_BLOCK_FTS
+      USING fts5(
+        BLOCK_TEXT,
+        content='PAGE_BLOCK',
+        content_rowid='ROWID'
+      )
+
+  DML:
+    INSERT: null
+
+    INSERT_INTO: |
+      INSERT INTO PAGE_BLOCK_FTS(PAGE_BLOCK_FTS) VALUES('rebuild')
+
+  DQL:
+    SELECT: |
+      SELECT     T.RANK, T.ROWID, S.PAGE_PHYSICAL_NUMBER, S.BLOCK_NO, S.TEXT_LEN
+               , highlight( PAGE_BLOCK_FTS, 0, '<<<', '>>>') AS HIGHLIGHTED
+            FROM PAGE_BLOCK_FTS T
+      INNER JOIN PAGE_BLOCK S 
+              ON T.ROWID = S.ROWID
+           WHERE T.BLOCK_TEXT MATCH ?
+        ORDER BY T.RANK ASC
+
+PageHtml:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: phtml
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_HTML
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      PAGE_HTML
+      ( PAGE_PHYSICAL_NUMBER INTEGER NOT NULL
+      , HTML_LEN    INTEGER GENERATED ALWAYS AS (length(HTML)) VIRTUAL
+      , HTML        TEXT
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      PAGE_HTML
+      ( PAGE_PHYSICAL_NUMBER
+      , HTML
+      ) VALUES ( ?, ? )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      # Page level... May include TEXT AND IMAGES.
+      page_html: str = page.get_text("html")
+
+      entry = (
+          page.number,  # 1
+          page_html,  # 2
+      )
+      self.data.append(entry)
+
+      pass
+
+PageXHtml:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: pxhtml
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_XHTML
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      PAGE_XHTML
+      ( PAGE_PHYSICAL_NUMBER INTEGER NOT NULL
+      , XHTML_LEN    INTEGER GENERATED ALWAYS AS (length(XHTML)) VIRTUAL
+      , XHTML        TEXT
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      PAGE_XHTML
+      ( PAGE_PHYSICAL_NUMBER
+      , XHTML
+      ) VALUES ( ?, ? )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      # Page level... May include TEXT AND IMAGES.
+      page_xhtml: str = page.get_text("xhtml")
+
+      entry = (
+          page.number,  # 1
+          page_xhtml,  # 2
+      )
+      self.data.append(entry)
+
+      pass
+
+PageXml:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: pxml
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_XML
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      PAGE_XML
+      ( PAGE_PHYSICAL_NUMBER INTEGER NOT NULL
+      , XML_LEN    INTEGER GENERATED ALWAYS AS (length(XML)) VIRTUAL
+      , XML        TEXT
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      PAGE_XML
+      ( PAGE_PHYSICAL_NUMBER
+      , XML
+      ) VALUES ( ?, ? )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      # Page level... May include TEXT AND IMAGES.
+      page_xml: str = page.get_text("xml")
+
+      entry = (
+          page.number,  # 1
+          page_xml,  # 2
+      )
+      self.data.append(entry)
+
+      pass
+
+PageText:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: ptxt
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_TEXT
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      PAGE_TEXT
+      ( PAGE_PHYSICAL_NUMBER INTEGER NOT NULL
+      , TXT_LEN    INTEGER GENERATED ALWAYS AS (length(TXT)) VIRTUAL
+      , TXT        TEXT
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      PAGE_TEXT
+      ( PAGE_PHYSICAL_NUMBER
+      , TXT
+      ) VALUES ( ?, ? )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      # Page level... May include TEXT AND IMAGES.
+      page_text: str = page.get_text("text", sort=True)
+
+      entry = (
+          page.number,  # 1
+          page_text,  # 2
+      )
+      self.data.append(entry)
+
+PageDict:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: pdict
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_DICT
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      PAGE_DICT
+      ( PAGE_PHYSICAL_NUMBER INTEGER NOT NULL
+      , DICT_LEN    INTEGER GENERATED ALWAYS AS (length(DICT)) VIRTUAL
+      , DICT        TEXT
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      PAGE_DICT
+      ( PAGE_PHYSICAL_NUMBER
+      , DICT
+      ) VALUES ( ?, ? )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      # Page level... May include TEXT AND IMAGES.
+      page_dict: dict = page.get_text("dict", sort=True)
+
+      entry = (
+          page.number,  # 1
+          str(page_dict),  # 2
+      )
+      self.data.append(entry)
+
+      pass
+
+PageRawDict:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: prdict
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_RAWDICT
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      PAGE_RAWDICT
+      ( PAGE_PHYSICAL_NUMBER INTEGER NOT NULL
+      , RAWDICT_LEN    INTEGER GENERATED ALWAYS AS (length(RAWDICT)) VIRTUAL
+      , RAWDICT        TEXT
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      PAGE_RAWDICT
+      ( PAGE_PHYSICAL_NUMBER
+      , RAWDICT
+      ) VALUES ( ?, ? )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      # Page level... May include TEXT AND IMAGES.
+      page_rawdict: dict = page.get_text("rawdict", sort=True)
+
+      entry = (
+          page.number,  # 1
+          str(page_rawdict),  # 2
+      )
+      self.data.append(entry)
+
+      pass
+
+PageJson:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: pjson
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_JSON
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      PAGE_JSON
+      ( PAGE_PHYSICAL_NUMBER INTEGER NOT NULL
+      , JSON_LEN    INTEGER GENERATED ALWAYS AS (length(JSON)) VIRTUAL
+      , JSON        TEXT
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      PAGE_JSON
+      ( PAGE_PHYSICAL_NUMBER
+      , JSON
+      ) VALUES ( ?, ? )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      # Page level... May include TEXT AND IMAGES.
+      page_json: dict = page.get_text("json", sort=True)
+
+      entry = (
+          page.number,  # 1
+          str(page_json),  # 2
+      )
+      self.data.append(entry)
+
+      pass
+
+PageRawJson:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: prjson
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_RAWJSON
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      PAGE_RAWJSON
+      ( PAGE_PHYSICAL_NUMBER INTEGER NOT NULL
+      , RAWJSON_LEN    INTEGER GENERATED ALWAYS AS (length(RAWJSON)) VIRTUAL
+      , RAWJSON        TEXT
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      PAGE_RAWJSON
+      ( PAGE_PHYSICAL_NUMBER
+      , RAWJSON
+      ) VALUES ( ?, ? )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      # Page level... May include TEXT AND IMAGES.
+      page_rawjson: dict = page.get_text("rawjson", sort=True)
+
+      entry = (
+          page.number,  # 1
+          str(page_rawjson),  # 2
+      )
+      self.data.append(entry)
+
+      pass
+
+PageSvg:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: psvg
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_SVG
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      PAGE_SVG
+      ( PAGE_PHYSICAL_NUMBER INTEGER NOT NULL
+      , SVG_LEN    INTEGER GENERATED ALWAYS AS (length(SVG)) VIRTUAL
+      , SVG        TEXT
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      PAGE_SVG
+      ( PAGE_PHYSICAL_NUMBER
+      , SVG
+      ) VALUES ( ?, ? )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      # Page level... May include TEXT AND IMAGES.
+      page_svg: str = page.get_svg_image(text_as_path=False)
+
+      entry = (
+          page.number,  # 1
+          page_svg,  # 2
+      )
+      self.data.append(entry)
+
+      pass
+
+PageSvgTextAsPath:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: psvgt
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_SVG_TEXTASPATH
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      PAGE_SVG_TEXTASPATH
+      ( PAGE_PHYSICAL_NUMBER INTEGER NOT NULL
+      , SVG_TEXTASPATH_LEN    INTEGER GENERATED ALWAYS AS (length(SVG_TEXTASPATH)) VIRTUAL
+      , SVG_TEXTASPATH        TEXT
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      PAGE_SVG_TEXTASPATH
+      ( PAGE_PHYSICAL_NUMBER
+      , SVG_TEXTASPATH
+      ) VALUES ( ?, ? )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      # Page level... May include TEXT AND IMAGES.
+      page_svg_textaspath: str = page.get_svg_image(text_as_path=True)
+
+      entry = (
+          page.number,  # 1
+          page_svg_textaspath,  # 2
+      )
+      self.data.append(entry)
+
+      pass
+
+PageWord:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: pw
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_WORD
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      PAGE_WORD
+      ( PAGE_PHYSICAL_NUMBER  INTEGER NOT NULL
+      , BLOCK_NO     INTEGER
+      , LINE_NO      INTEGER
+      , WORD_NO      INTEGER
+
+      , GRAPHEME_LEN INTEGER GENERATED ALWAYS AS (length(GRAPHEME)) VIRTUAL
+      , ALPHANUM_LEN INTEGER GENERATED ALWAYS AS (length(ALPHANUM)) VIRTUAL
+
+      , GRAPHEME         TEXT
+      , ALPHANUM         TEXT
+      , LOWERED_ALPHANUM TEXT GENERATED ALWAYS AS (lower(ALPHANUM)) VIRTUAL
+      , STOPWORD         BOOL
+
+      , X0               REAL
+      , Y0               REAL
+      , X1               REAL
+      , Y1               REAL
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      PAGE_WORD
+      ( PAGE_PHYSICAL_NUMBER
+      , BLOCK_NO
+      , LINE_NO
+      , WORD_NO
+      , GRAPHEME
+      , ALPHANUM
+      , STOPWORD
+      , X0, Y0, X1, Y1
+      ) 
+      VALUES ( 
+        ?, ?, ?, ?, ?, 
+        ?, ?, ?, ?, ?,
+        ? 
+      )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      STOPWORDS = {
+          "i",
+          "me",
+          "my",
+          "myself",
+          "we",
+          "our",
+          "ours",
+          "ourselves",
+          "you",
+          "your",
+          "yours",
+          "yourself",
+          "yourselves",
+          "he",
+          "him",
+          "his",
+          "himself",
+          "she",
+          "her",
+          "hers",
+          "herself",
+          "it",
+          "its",
+          "itself",
+          "they",
+          "them",
+          "their",
+          "theirs",
+          "themselves",
+          "what",
+          "which",
+          "who",
+          "whom",
+          "this",
+          "that",
+          "these",
+          "those",
+          "am",
+          "is",
+          "are",
+          "was",
+          "were",
+          "be",
+          "been",
+          "being",
+          "have",
+          "has",
+          "had",
+          "having",
+          "do",
+          "does",
+          "did",
+          "doing",
+          "a",
+          "an",
+          "the",
+          "and",
+          "but",
+          "if",
+          "or",
+          "because",
+          "as",
+          "until",
+          "while",
+          "of",
+          "at",
+          "by",
+          "for",
+          "with",
+          "about",
+          "against",
+          "between",
+          "through",
+          "during",
+          "before",
+          "after",
+          "above",
+          "below",
+          "to",
+          "from",
+          "up",
+          "down",
+          "in",
+          "out",
+          "on",
+          "off",
+          "over",
+          "under",
+          "again",
+          "further",
+          "then",
+          "once",
+          "here",
+          "there",
+          "when",
+          "where",
+          "why",
+          "how",
+          "all",
+          "both",
+          "each",
+          "few",
+          "more",
+          "most",
+          "other",
+          "some",
+          "such",
+          "no",
+          "nor",
+          "not",
+          "only",
+          "own",
+          "same",
+          "so",
+          "than",
+          "too",
+          "very",
+          "s",
+          "t",
+          "can",
+          "will",
+          "just",
+          "don",
+          "should",
+          "now",
+      }
+      # STOPWORDS = set(stopwords.words("english"))
+      # (x0, y0, x1, y1, "word", block_no, line_no, word_no)
+      words = page.get_text("words", sort=True)
+
+      for word in words:
+          x0 = y0 = x1 = y1 = wrd = block_no = line_no = word_no = None
+          x0, y0, x1, y1, wrd, block_no, line_no, word_no = word
+          # Keep only alphanumeric characters in each string
+          alphanum = re.sub(r"[^a-zA-Z0-9]", "", wrd)
+
+          # ipa_repr = ipa_repr_str = None
+          # ipa_repr = ipa.ipa_list(wrd)
+          # ipa_repr_str = str(ipa_repr)
+
+          entry = (
+              page.number,
+              block_no,
+              line_no,
+              word_no,
+              wrd,
+              alphanum,
+              alphanum.lower().strip() in self.STOPWORDS,
+              x0,
+              y0,
+              x1,
+              y1,
+          )
+
+          self.data.append(entry)
+
+      pass
+
+DocumentWordFrequency:
+  RMK: see PageWord["NAME"]
+
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: dwf
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP VIEW IF EXISTS
+      DOCUMENT_WORD_FREQUENCY
+
+    CREATE: |
+      CREATE VIEW
+      DOCUMENT_WORD_FREQUENCY
+      AS
+        SELECT COUNT(1) FREQ
+             , ALPHANUM_LEN
+             , T.LOWERED_ALPHANUM
+             , T.STOPWORD
+          FROM PAGE_WORD T
+      GROUP BY T.LOWERED_ALPHANUM
+      ORDER BY COUNT(1) DESC
+
+  DML: null
+
+  DQL: null
+
+PageWordFrequency:
+  RMK: see PageWord["NAME"]
+
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: pwf
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP VIEW IF EXISTS
+      PAGE_WORD_FREQUENCY
+
+    CREATE: |
+      CREATE VIEW
+      PAGE_WORD_FREQUENCY
+      AS
+        SELECT COUNT(1) FREQ
+             , T.ALPHANUM_LEN
+             , T.PAGE_PHYSICAL_NUMBER, T.LOWERED_ALPHANUM, T.STOPWORD
+          FROM PAGE_WORD T
+      GROUP BY T.PAGE_PHYSICAL_NUMBER, T.LOWERED_ALPHANUM, T.STOPWORD
+      ORDER BY COUNT(1) DESC
+
+  DML: null
+
+  DQL: null
+
+PageTable:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: ptbl
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_TABLE
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      PAGE_TABLE
+      ( PAGE_PHYSICAL_NUMBER     INTEGER NOT NULL
+      , TABLE_NUMBER    INTEGER
+      , EXTERNAL_HEADER INTEGER
+      , X0              INTEGER
+      , Y0              INTEGER
+      , X1              INTEGER
+      , Y1              INTEGER
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      PAGE_TABLE
+      ( PAGE_PHYSICAL_NUMBER
+      , TABLE_NUMBER
+      , EXTERNAL_HEADER
+      , X0, Y0, X1, Y1
+      )
+      VALUES 
+      ( ?, ?, ?
+      , ?, ?, ?, ?
+      )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      # list[ (xref, ext, type, basefont, name, encoding, referencer) ]
+      tableList: TableFinder = page.find_tables()
+      # Extract tables as pandas DataFrames
+      table: Table = None
+
+      for idx, table in enumerate(tableList):
+          # Get the rectangle bounding the table
+          x0, y0, x1, y1 = table.bbox
+          # PANDAS
+          entry = (
+              page.number,
+              idx,
+              table.header.external,  # 0 or 1
+              x0,
+              y0,
+              x1,
+              y1,
+          )
+          self.data.append(entry)
+
+      pass
+
+PageTableCsv:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: ptcsv
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_TABLE_CSV
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      PAGE_TABLE_CSV
+      ( PAGE_PHYSICAL_NUMBER     INTEGER NOT NULL
+      , TABLE_NUMBER    INTEGER
+      , TO_CSV          TEXT
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      PAGE_TABLE_CSV
+      ( PAGE_PHYSICAL_NUMBER
+      , TABLE_NUMBER
+      , TO_CSV
+      )
+      VALUES 
+      ( ?, ?, ? )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      # list[ (xref, ext, type, basefont, name, encoding, referencer) ]
+      tableList: TableFinder = page.find_tables()
+      # Extract tables as pandas DataFrames
+      table: Table = None
+
+      for idx, table in enumerate(tableList):
+          # PANDAS
+          to_pandas: DataFrame = table.to_pandas()
+          to_csv = to_pandas.to_csv(index=True)
+          entry = (
+              page.number,
+              idx,
+              to_csv,
+          )
+          self.data.append(entry)
+
+      pass
+
+PageTableHtml:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: pthtml
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_TABLE_HTML
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      PAGE_TABLE_HTML
+      ( PAGE_PHYSICAL_NUMBER     INTEGER NOT NULL
+      , TABLE_NUMBER    INTEGER
+      , TO_HTML         TEXT
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      PAGE_TABLE_HTML
+      ( PAGE_PHYSICAL_NUMBER
+      , TABLE_NUMBER
+      , TO_HTML
+      )
+      VALUES 
+      ( ?, ?, ? )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      # list[ (xref, ext, type, basefont, name, encoding, referencer) ]
+      tableList: TableFinder = page.find_tables()
+      # Extract tables as pandas DataFrames
+      table: Table = None
+
+      for idx, table in enumerate(tableList):
+          # PANDAS
+          to_pandas: DataFrame = table.to_pandas()
+          to_html = to_pandas.to_html()
+          entry = (
+              page.number,
+              idx,
+              to_html,
+          )
+          self.data.append(entry)
+
+      pass
+
+PageTableJson:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: ptjson
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_TABLE_JSON
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      PAGE_TABLE_JSON
+      ( PAGE_PHYSICAL_NUMBER     INTEGER NOT NULL
+      , TABLE_NUMBER    INTEGER
+      , TO_JSON         TEXT
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      PAGE_TABLE_JSON
+      ( PAGE_PHYSICAL_NUMBER
+      , TABLE_NUMBER
+      , TO_JSON
+      )
+      VALUES 
+      ( ?, ?, ? )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      # list[ (xref, ext, type, basefont, name, encoding, referencer) ]
+      tableList: TableFinder = page.find_tables()
+      # Extract tables as pandas DataFrames
+      table: Table = None
+
+      for idx, table in enumerate(tableList):
+          # PANDAS
+          to_pandas: DataFrame = table.to_pandas()
+          to_json: str = to_pandas.to_json()
+          entry = (
+              page.number,
+              idx,
+              to_json,
+          )
+          self.data.append(entry)
+
+      pass
+
+PageTableList:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: ptlist
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_TABLE_LIST
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      PAGE_TABLE_LIST
+      ( PAGE_PHYSICAL_NUMBER     INTEGER NOT NULL
+      , TABLE_NUMBER    INTEGER
+      , TO_LIST         TEXT
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      PAGE_TABLE_LIST
+      ( PAGE_PHYSICAL_NUMBER
+      , TABLE_NUMBER
+      , TO_LIST
+      )
+      VALUES 
+      ( ?, ?, ? )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      # list[ (xref, ext, type, basefont, name, encoding, referencer) ]
+      tableList: TableFinder = page.find_tables()
+      # Extract tables as pandas DataFrames
+      table: Table = None
+
+      for idx, table in enumerate(tableList):
+          to_extract = table.extract()
+          entry = (
+              page.number,
+              idx,
+              str(to_extract),
+          )
+          self.data.append(entry)
+
+      pass
+
+PageTableMarkdown:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: ptmd
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_TABLE_MARKDOWN
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      PAGE_TABLE_MARKDOWN
+      ( PAGE_PHYSICAL_NUMBER     INTEGER NOT NULL
+      , TABLE_NUMBER    INTEGER
+      , TO_MARKDOWN     TEXT
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      PAGE_TABLE_MARKDOWN
+      ( PAGE_PHYSICAL_NUMBER
+      , TABLE_NUMBER
+      , TO_MARKDOWN
+      )
+      VALUES 
+      ( ?, ?, ? )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      # list[ (xref, ext, type, basefont, name, encoding, referencer) ]
+      tableList: TableFinder = page.find_tables()
+      # Extract tables as pandas DataFrames
+      table: Table = None
+
+      for idx, table in enumerate(tableList):
+          # PANDAS
+          to_pandas: DataFrame = table.to_pandas()
+          to_markdown = to_pandas.to_markdown()
+          entry = (
+              page.number,
+              idx,
+              to_markdown,
+          )
+          self.data.append(entry)
+
+      pass
+
+PageTablePixMap:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: ptpm
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_TABLE_PIXMAP
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      PAGE_TABLE_PIXMAP
+      ( PAGE_PHYSICAL_NUMBER     INTEGER NOT NULL
+      , TABLE_NUMBER    INTEGER
+      , TO_IMAGE        BLOB
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      PAGE_TABLE_PIXMAP
+      ( PAGE_PHYSICAL_NUMBER
+      , TABLE_NUMBER
+      , TO_IMAGE
+      )
+      VALUES 
+      ( ?, ?, ? )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      # list[ (xref, ext, type, basefont, name, encoding, referencer) ]
+      tableList: TableFinder = page.find_tables()
+      # Extract tables as pandas DataFrames
+      table: Table = None
+
+      for idx, table in enumerate(tableList):
+          # Get the rectangle bounding the table
+          x0, y0, x1, y1 = table.bbox
+          # Transform by zoom factor
+          clip = Rect(x0, y0, x1, y1)  # use table's rect
+          # Render page to a Pixmap, clipped to table rect
+          pix = page.get_pixmap(matrix=self.mat, clip=clip)
+
+          entry = (
+              page.number,
+              idx,
+              pix.tobytes(),  # BLOB
+          )
+          self.data.append(entry)
+
+      pass
+
+PageTableSql:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: ptsql
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_TABLE_SQL
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      PAGE_TABLE_SQL
+      ( PAGE_PHYSICAL_NUMBER     INTEGER NOT NULL
+      , TABLE_NUMBER    INTEGER
+      , DROP_STMT       TEXT
+      , CREATE_STMT     TEXT
+      , INSERT_STMT     TEXT
+      , SELECT_STMT     TEXT
+      , VIEW_STMT       TEXT
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      PAGE_TABLE_SQL
+      ( PAGE_PHYSICAL_NUMBER
+      , TABLE_NUMBER
+      , DROP_STMT
+      , CREATE_STMT
+      , INSERT_STMT
+      , SELECT_STMT
+      , VIEW_STMT
+      )
+      VALUES 
+      ( ?, ?, ?, ?, ?, ?, ? )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      # list[ (xref, ext, type, basefont, name, encoding, referencer) ]
+      tableList: TableFinder = page.find_tables()
+      # Extract tables as pandas DataFrames
+      table: Table = None
+
+      for idx, table in enumerate(tableList):
+          # PANDAS
+          to_pandas: DataFrame = table.to_pandas()
+
+          drop_sql = create_sql = insert_sqls = select_sql = view_sql = None
+
+          drop_sql, create_sql, insert_sqls, select_sql, view_sql = (
+              PandasToSqliteOffline.generate_sql(
+                  df=to_pandas,
+                  table_name=f"T-P{page.number:04}-#{idx:03d}",
+                  include_index=True,
+              )
+          )
+          entry = (
+              page.number,
+              idx,
+              drop_sql,
+              create_sql,
+              str(insert_sqls),
+              select_sql,
+              view_sql,
+          )
+          self.data.append(entry)
+
+      pass
+
+PageImageInfo:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: pii
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_IMAGE_INFO
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      PAGE_IMAGE_INFO
+      ( PAGE_PHYSICAL_NUMBER  INTEGER NOT NULL
+      , BLOCK_NUMBER INTEGER
+      , BBOX         TEXT
+      , WIDTH        INTEGER
+      , HEIGHT       INTEGER
+      , CS_NAME      TEXT
+      , COLORSPACE   INTEGER
+      , XRES         INTEGER
+      , YRES         INTEGER
+      , BPC          INTEGER
+      , SIZE         INTEGER
+      , DIGEST       TEXT
+      , XREF         INTEGER
+      , TRANSFORM    TEXT
+      , HAS_MASK     BOOLEAN
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      PAGE_IMAGE_INFO
+      ( PAGE_PHYSICAL_NUMBER
+      , BLOCK_NUMBER
+      , BBOX
+      , WIDTH
+      , HEIGHT
+      , CS_NAME
+      , COLORSPACE
+      , XRES, YRES
+      , BPC
+      , SIZE
+      , DIGEST
+      , XREF
+      , TRANSFORM
+      , HAS_MASK
+      )
+      VALUES 
+      ( ?, ?, ?, ?, ?
+      , ?, ?, ?, ?, ?
+      , ?, ?, ?, ?, ?
+      )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      # Clean up the page contents to ensure accurate image extraction.
+      page.clean_contents()
+      img_info_list: str = page.get_image_info(hashes=True, xrefs=False)
+      for img_info in img_info_list:
+          digest_bytes = img_info.get("digest")
+          digest_hex = digest_bytes.hex() if digest_bytes is not None else None
+          entry = (
+              page.number,
+              img_info.get("number"),  # BLOCK_NUMBER
+              str(img_info.get("bbox")),  # BBOX
+              img_info.get("width"),  # WIDTH
+              img_info.get("height"),  # HEIGHT
+              img_info.get("cs-name"),  # CS_NAME
+              img_info.get("colorspace"),  # COLORSPACE
+              img_info.get("xres"),  # XRES
+              img_info.get("yres"),  # YRES
+              img_info.get("bpc"),  # BPC
+              img_info.get("size"),  # SIZE
+              digest_hex,  # DIGEST as hex string
+              img_info.get("xref"),  # XREF
+              str(img_info.get("transform")),  # TRANSFORM
+              img_info.get("has-mask"),  # HAS_MASK
+          )
+          self.data.append(entry)
+
+      pass
+
+PageImage:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: pi
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_IMAGE
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      PAGE_IMAGE
+      ( PAGE_PHYSICAL_NUMBER    INTEGER NOT NULL
+      , XREF           INTEGER NOT NULL
+      , SMASK          INTEGER
+      , WIDTH          INTEGER NOT NULL
+      , HEIGHT         INTEGER NOT NULL
+      , BPC            INTEGER NOT NULL
+      , COLORSPACE     TEXT NOT NULL
+      , ALT_COLORSPACE TEXT
+      , NAME           TEXT
+      , FILTER         TEXT
+      , REFERENCER     INTEGER
+      , EXT_           TEXT
+      , SMASK_         INTEGER
+      , WIDTH_         INTEGER
+      , HEIGHT_        INTEGER
+      , COLORSPACE_    INTEGER
+      , CS_NAME_       TEXT
+      , XRES_          INTEGER
+      , YRES_          INTEGER
+      , IMAGE_         BLOB
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      PAGE_IMAGE
+      ( PAGE_PHYSICAL_NUMBER
+      , XREF
+      , SMASK
+      , WIDTH
+      , HEIGHT
+      , BPC
+      , COLORSPACE
+      , ALT_COLORSPACE
+      , NAME
+      , FILTER
+      , REFERENCER
+      , EXT_
+      , SMASK_
+      , WIDTH_
+      , HEIGHT_
+      , COLORSPACE_
+      , CS_NAME_
+      , XRES_
+      , YRES_
+      , IMAGE_
+      )
+      VALUES 
+      ( ?, ?, ?, ?, ?
+      , ?, ?, ?, ?, ?
+      , ?, ?, ?, ?, ?
+      , ?, ?, ?, ?, ?
+      )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      # Clean up the page contents to ensure accurate image extraction.
+      if page.number > 0:
+          page.clean_contents()
+
+      # list[dict] = [
+      #    (
+      #       xref, smask, width, height, bpc,
+      #       colorspace, alt_colorspace,
+      #       name, filter, referencer
+      #    )
+      # ]
+      img_list: str = page.get_images(full=True)
+      for img_info in img_list:
+          xref = img_info[0]  # image object number
+          #
+          xtract_img = page.parent.extract_image(xref)
+          #
+          ext_ = xtract_img.get("ext")  # image type/extension
+          smask_ = xtract_img.get("smask")  # xref of soft-mask image
+          width_ = xtract_img.get("width")  # image width
+          height_ = xtract_img.get("height")  # image height
+          colorspace_ = xtract_img.get("colorspace")  # colorspace number
+          cs_name_ = xtract_img.get("cs-name")  # colorspace name
+          xres_ = xtract_img.get("xres")  # x resolution
+          yres_ = xtract_img.get("yres")  # y resolution
+          image_data_ = xtract_img.get("image")  # image bytes
+          smask = img_info[1]  # soft-mask image object number
+          width = img_info[2]  # image width
+          height = img_info[3]  # image height
+          bpc = img_info[4]  # bits per component
+          colorspace = img_info[5]  # colorspace name
+          alt_colorspace = img_info[6]  # alternate colorspace
+          name = img_info[7]  # symbolic image name
+          filter = img_info[8]  # decode filter
+          referencer = (
+              img_info[9] if len(img_info) > 9 else None
+          )  # xref of referencer
+          entry = (
+              page.number,  # PAGE_NUMBER
+              xref,  # XREF
+              smask,  # SMASK
+              width,  # WIDTH
+              height,  # HEIGHT
+              bpc,  # BPC
+              colorspace,  # COLORSPACE
+              alt_colorspace,  # ALT_COLORSPACE
+              name,  # NAME
+              filter,  # FILTER
+              referencer,  # REFERENCER
+              ext_,  # EXT_
+              smask_ if smask != smask_ else None,  # SMASK_
+              width_ if width != width_ else None,  # WIDTH_
+              height_ if height != height_ else None,  # HEIGHT_
+              colorspace_ if colorspace != colorspace_ else None,  # COLORSPACE_
+              cs_name_,  # CS_NAME_
+              xres_,  # XRES_
+              yres_,  # YRES_
+              image_data_,  # IMAGE_
+          )
+
+          self.data.append(entry)
+
+      pass
+
+PageAnnotation:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: pa
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_ANNOTATION
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      PAGE_ANNOTATION
+      ( PAGE_PHYSICAL_NUMBER INTEGER NOT NULL
+      , COUNTER     INTEGER 
+      , TYPE        TEXT
+      , APN_BBOX    TEXT
+      , APB_MATRIX  TEXT
+      , BLENDMODE   TEXT
+      , COLORS      TEXT
+      , FLAGS       INTEGER
+      , HAS_POPUP   BOOLEAN
+      , IS_OPEN     BOOLEAN
+      , INFO        TEXT
+      , IRT_XREF    TEXT
+      , LANGUAGE    TEXT
+      , LINE_ENDS   TEXT
+      , POPUP_RECT  TEXT
+      , POPUP_XREF  TEXT
+      , RECT        TEXT
+      , ROTATION    TEXT
+      , OPACITY     TEXT
+      , RECT_DELTA  TEXT
+      , VERTICES    TEXT
+      , XREF        TEXT
+      , IMAGE       BLOB
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      PAGE_ANNOTATION
+      ( PAGE_PHYSICAL_NUMBER
+      , COUNTER
+      , TYPE
+      , APN_BBOX
+      , APB_MATRIX
+      , BLENDMODE
+      , COLORS
+      , FLAGS
+      , HAS_POPUP
+      , IS_OPEN
+      , INFO
+      , IRT_XREF
+      , LANGUAGE
+      , LINE_ENDS
+      , POPUP_RECT
+      , POPUP_XREF
+      , RECT
+      , ROTATION
+      , OPACITY
+      , RECT_DELTA
+      , VERTICES
+      , XREF
+      , IMAGE
+      )
+      VALUES 
+      ( ?, ?, ?, ?, ?
+      , ?, ?, ?, ?, ? 
+      , ?, ?, ?, ?, ? 
+      , ?, ?, ?, ?, ? 
+      , ?, ?, ?
+      )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      # Clean up the page contents to ensure accurate image extraction.
+      page.clean_contents()
+
+      counter = 0
+
+      for annot in page.annots():
+
+          if annot is None:
+              continue
+
+          counter += 1
+
+          # annot_parent = annot.parent
+          # annot_next = annot.next
+
+          # Render page to a Pixmap, clipped to table rect
+          pix = page.get_pixmap(matrix=annot.apn_matrix, clip=annot.rect)
+
+          entry = (
+              page.number,
+              counter,
+              str(annot.type),
+              str(annot.apn_bbox),
+              str(annot.apn_matrix),
+              str(annot.blendmode),
+              str(annot.colors),
+              # annot_file_info = annot.file_info
+              str(annot.flags),
+              str(annot.has_popup),
+              str(annot.is_open),
+              str(json.dumps(annot.info)),
+              str(annot.irt_xref),
+              str(annot.language),
+              str(annot.line_ends),
+              str(annot.popup_rect),
+              str(annot.popup_xref),
+              str(annot.rect),
+              str(annot.rotation),
+              str(annot.opacity),
+              str(annot.rect_delta),
+              str(annot.vertices),
+              str(annot.xref),
+              pix.tobytes(),  # BLOB
+          )
+
+          self.data.append(entry)
+
+      pass
+
+DocumentEmbeddedFileInfo:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: defi
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      DOCUMENT_EMBEDDED_FILE_INFO
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      DOCUMENT_EMBEDDED_FILE_INFO
+      ( RID          INTEGER PRIMARY KEY AUTOINCREMENT
+      , DICT         TEXT
+      -- , CNT          INTEGER
+      -- , NAME1        TEXT
+      -- , NAME2        TEXT
+      -- , FILENAME     TEXT
+      -- , UFILENAME    TEXT
+      -- , DESCRIPTION  TEXT
+      -- , SIZE         INTEGER
+      -- , LENGTH       INTEGER
+      -- , CREATIONDATE TEXT
+      -- , MODDATE      TEXT
+      -- , COLLECTION   INTEGER
+      -- , CHECKSUM     TEXT
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      DOCUMENT_EMBEDDED_FILE_INFO
+      ( DICT ) VALUES ( ? )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      for name in doc.embfile_names():
+          info_dict = doc.embfile_info(name)
+          entry = json.dumps(info_dict, ensure_ascii=False, default=str)
+          self.data.append((entry,))
+          flush_logger(self.cfg.logger)
+          pass
+
+PagePixmap:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: ppix
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_PIXMAP
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      PAGE_PIXMAP
+      ( PAGE_PHYSICAL_NUMBER  INTEGER NOT NULL
+      , MATRTIX      TEXT
+      , PIXMAP       BLOB
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      PAGE_PIXMAP
+      ( PAGE_PHYSICAL_NUMBER
+      , MATRTIX
+      , PIXMAP
+      ) VALUES 
+      ( ?, ?, ? )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      # https://pymupdf.readthedocs.io/en/latest/page.html#Page.get_pixmap
+
+      """
+      Pass the format name as a string to tobytes(format):
+
+      Format	Lossless	Notes
+      "png"	Yes	Default, good quality, larger size.
+      "jpeg"	No	Compressed, smaller size, configurable quality (via pix.save options).
+      "jpg"	No	Alias for "jpeg".
+      "bmp"	Yes	Uncompressed, very large size, rarely used.
+      "ppm"	Yes	Portable Pixmap format, uncompressed.
+      "pgm"	Yes	Grayscale only.
+      "pbm"	Yes	Binary monochrome only.
+
+      Recommendation for SQLite
+      Use "jpeg" if image quality is less critical than storage size, or "png" if
+      transparency/lossless quality is required. Note that storing images directly in SQLite
+      is generally discouraged for performance reasons; consider storing paths to files on
+      disk instead.
+      """
+      format = "jpeg"
+
+      # pymupdf.csGRAY, pymupdf.csCMYK, pymupdf.csRGB, pymupdf.csLAB, pymupdf.csYCCK
+      colorspace = pymupdf.csRGB
+
+      page_pixmap: bytes = page.get_pixmap(
+          alpha=False, matrix=pymupdf.Identity, colorspace=colorspace
+      ).tobytes(format)
+
+      entry = (
+          page.number,  # 1
+          str(pymupdf.Identity),  # 2
+          page_pixmap,  # 3
+      )
+      self.data.append(entry)
+
+      pass
+
+PageDrawings:
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: pd
+    DEFAULT: True
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_DRAWINGS
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS
+      PAGE_DRAWINGS
+      ( PAGE_PHYSICAL_NUMBER  INTEGER NOT NULL
+      , LOD_LEN      INTEGER GENERATED ALWAYS AS (length(LIST_OF_DICT)) VIRTUAL
+      , LIST_OF_DICT TEXT
+      )
+
+  DML:
+    INSERT: |
+      INSERT INTO 
+      PAGE_DRAWINGS
+      ( PAGE_PHYSICAL_NUMBER
+      , LIST_OF_DICT
+      ) VALUES 
+      ( ?, ? )
+
+  DQL: null
+
+  SCRIPT:
+    APPEND: |
+      # https://pymupdf.readthedocs.io/en/latest/page.html#Page.get_drawings
+      # https://pymupdf.readthedocs.io/en/latest/page.html#Page.get_cdrawings
+      page_cdrawings: str = page.get_cdrawings(extended=True)
+
+      entry = (
+          page.number,  # 1
+          str(page_cdrawings),  # 2
+      )
+      self.data.append(entry)
+
+      pass

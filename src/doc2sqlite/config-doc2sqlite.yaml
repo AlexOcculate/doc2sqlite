@@ -1,0 +1,40 @@
+InputPdf: "/Users/Shared/__PYTHON__/__FastAPI/doc2sqlite_root/Complete-PV-list.pdf"
+# OutputDb: "output.db"
+# Log: "stdout"
+
+DocumentInfo: true
+DocumentToC: true
+PagePhysical2Label: true
+PageText: true
+
+DocumentPageLabel: true
+##DocEmbeddedFileInfo: true
+PageAnnotation: true
+PageFont: true
+DocumentFont: true
+PageLink: true
+DocumentLink: true
+PageBlock: true
+PageKG: true
+PageBlockFTS: true
+PageHtml: true
+PageXHtml: true
+PageXml: true
+
+PageWord: true
+PageWordFrequency: true
+DocumentWordFrequency: true
+
+PageDict: true
+PageRawDict: true
+PageJson: true
+PageRawJson: true
+PageSvg: true
+PageSvgTextAsPath: true
+PageTable: true
+PageImageInfo: true
+PageImage: true
+PagePixmap: true
+PageDrawings: true
+
+

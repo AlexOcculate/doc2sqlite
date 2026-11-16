@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "doc2sqlite"
+version = "0.0.3"
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+description = "A minimal toy package for doc2sqlite PyPI distribution."
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [{ name = "Alex Occulate", email = "zeroingvoid@nowhere.void.null" }]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+]
+dependencies = [
+  "PyYAML>=6.0.3",
+  "pymupdf==1.28.0",
+  "pymupdf-layout==1.28.0",
+  "importlib_resources>=7.1.0",
+  "pandas>=3.0.3",
+  "tabulate>=0.10.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/ZeroingVoid/doc2sqlite"
+Repository = "https://github.com/ZeroingVoid/doc2sqlite"
+Documentation = "https://ZeroingVoid.github.io/doc2sqlite"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+# This tells setuptools to look for packages inside the 'src' folder
+
+[tool.setuptools.package-data]
+doc2sqlite = ["*.yaml", "*.txt"]
+
+[project.scripts]
+doc2sqlite = "doc2sqlite.core:core"
