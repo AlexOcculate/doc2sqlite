@@ -28,6 +28,7 @@ python -m build
 pip install -e .
 pip install --force-reinstall dist/*.whl
 
+      , CREATED_AT      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 
 
 To publish a Python package to PyPI (the Python Package Index), structure your project with a pyproject.toml configuration file, build your distribution archives, and upload them using an API token. [1] (https://packaging.python.org/tutorials/packaging-projects/), [2] (https://www.linkedin.com/pulse/build-publish-your-own-python-package-pypi-pratik-joshi-apftc), [3] (https://www.youtube.com/watch?v=OXkFRBb6l3M&vl=en&t=3)
@@ -101,3 +102,119 @@ Use twine to securely upload your built files to the index. [1] (https://www.lin
 4. Test your installation. Open a fresh virtual environment and run pip install my-unique-package-name to confirm anyone can download and import your library. [1] (https://www.youtube.com/watch?v=rM1SqONoPXs&t=34), [2] (https://packaging.python.org/tutorials/packaging-projects/), [3] (https://www.youtube.com/watch?v=OXkFRBb6l3M&vl=en&t=3)
 (Note: If you use uv as your project manager, you can streamline these steps using uv init, uv build, and uv publish instead of build and twine.) [1] (https://www.youtube.com/watch?v=rM1SqONoPXs&t=34), [2] (https://pydevtools.com/handbook/tutorial/publishing-your-first-python-package-to-pypi/)
 Would you like to see how to automate future releases using GitHub Actions (Trusted Publishing), or do you need help configuring specific CLI entry points or package dependencies?
+
+
+
+
+
+SELECT T.PAGE_PHYSICAL_NUMBER
+     , T.BLOCK_NO
+     , T.VERSION
+     ---
+     , T.CREATED_AT
+     , T.BLOCK_TYPE_CODE
+     , T.BLOCK_TEXT
+     , T.LOWERED_TEXT
+     , T.TEXT_LEN
+  FROM PAGE_BLOCK_VERSIONED T
+;
+
+
+SELECT T.PAGE_PHYSICAL_NUMBER
+     , T.BLOCK_NO
+     , T.VERSION
+     ---
+     , T.BLOCK_TEXT
+  FROM PAGE_BLOCK_VERSIONED T
+ WHERE T.BLOCK_TYPE_CODE = 0 -- TEXT
+;
+
+
+-- PAGE_BLOCK definition
+
+CREATE TABLE PAGE_BLOCK_TRANSLATED
+( PAGE_PHYSICAL_NUMBER   INTEGER NOT NULL
+, BLOCK_NO               INTEGER
+, T.VERSION              TEXT
+, CREATED_AT             DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+, LANGUAGE               TEXT NOT NULL DEFAULT 'pt-br'
+---
+, BLOCK_TEXT      TEXT
+, LOWERED_TEXT    TEXT GENERATED ALWAYS AS (lower(BLOCK_TEXT)) VIRTUAL
+, TEXT_LEN        INTEGER GENERATED ALWAYS AS (length(BLOCK_TEXT)) VIRTUAL
+);
+
+
+
+
+
+Database: SQLite3
+Batching: one block at time
+Model Choice: Helsinki-NLP/opus-mt-en-pt via HuggingFace
+Temperature: 0
+
+
+
+pip install torch transformers sentencepiece accelerate sacremoses
+pip install mlx-lm
+
+
+
+
+find ~ -type f \( -name "*.gguf" -o -name "*.safetensors" -o -name "*.bin" \)
+ls -la ~/.cache/huggingface/hub/
+ls -la ~/.cache/huggingface/mlx/
+ls -la ~/.cache/lm-studio/models/
+ls -la ~/.ollama/models/
+
+
+Write a code snippet for translation from en-US to pt-BR:
+
+LANGUAGE: Python
+DATABASE: SQLite3
+
+```
+-- INPUT SELECT
+SELECT T.PAGE_PHYSICAL_NUMBER
+     , T.BLOCK_NO
+     , T.VERSION
+     , T.CREATED_AT
+     , T.TEXT_LEN
+     , T.BLOCK_TEXT
+  FROM PAGE_BLOCK_VERSIONED T
+```
+
+```
+-- OUTPUT TABLE
+CREATE TABLE PAGE_BLOCK_TRANSLATED
+( PAGE_PHYSICAL_NUMBER   INTEGER NOT NULL
+, BLOCK_NO               INTEGER
+, VERSION                TEXT
+, CREATED_AT             DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+, "IETF-BCP-47_RFC-5646" TEXT NOT NULL DEFAULT 'pt-BR' 
+      CHECK ( "IETF-BCP-47_RFC-5646" IN (
+                'pt-BR',  -- Portuguese (Brazil)
+                'pt-PT',  -- Portuguese (Portugal)
+                'en-US',  -- English (United States)
+                'en-GB',  -- English (United Kingdom)
+                'en-AU',  -- English (Australia)
+                'es-ES',  -- Spanish (Spain)
+                'es-MX',  -- Spanish (Mexico)
+                'es-AR',  -- Spanish (Argentina)
+                'es-419', -- Spanish (Latin America)
+                'fr-FR',  -- French (France)
+                'fr-CA',  -- French (Canada)
+                'de-DE',  -- German (Germany)
+                'it-IT'   -- Italian (Italy)
+      ))
+---
+, BLOCK_TEXT      TEXT
+, LOWERED_TEXT    TEXT    GENERATED ALWAYS AS (lower(BLOCK_TEXT)) VIRTUAL
+, TEXT_LEN        INTEGER GENERATED ALWAYS AS (length(BLOCK_TEXT)) VIRTUAL
+---
+, INPUT_TOKENS         INTEGER
+, AVAILABLE_TOKENS     INTEGER
+, DYNAMIC_MAX_TOKENS   INTEGER
+, OUTPUT_TOKENS        INTEGER
+)
+```

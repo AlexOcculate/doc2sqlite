@@ -632,12 +632,14 @@ PageBlock:
       CREATE TABLE IF NOT EXISTS
       PAGE_BLOCK
       ( PAGE_PHYSICAL_NUMBER     INTEGER NOT NULL
-      , BLOCK_TYPE_CODE INTEGER
-      , BLOCK_TYPE_NAME TEXT
       , BLOCK_NO        INTEGER
+      , CREATED_AT      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      ---
+      , BLOCK_TYPE_CODE INTEGER
+      , TEXT_LEN        INTEGER GENERATED ALWAYS AS (length(BLOCK_TEXT)) VIRTUAL
+      , BLOCK_TYPE_NAME TEXT
       , BLOCK_TEXT      TEXT
       , LOWERED_TEXT    TEXT GENERATED ALWAYS AS (lower(BLOCK_TEXT)) VIRTUAL
-      , TEXT_LEN        INTEGER GENERATED ALWAYS AS (length(BLOCK_TEXT)) VIRTUAL
       , X0              REAL
       , Y0              REAL
       , X1              REAL
@@ -699,6 +701,174 @@ PageBlock:
           self.data.append(entry)
 
       pass
+
+PageBlockVersioned:
+  RMK: see PageBlock["NAME"]
+
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: pbv
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP VIEW IF EXISTS
+      PAGE_BLOCK_VERSIONED
+
+    CREATE: |
+      CREATE VIEW
+      PAGE_BLOCK_VERSIONED 
+      ( PAGE_PHYSICAL_NUMBER
+      , BLOCK_NO
+      , VERSION
+      , CREATED_AT
+      , BLOCK_TYPE_CODE
+      , TEXT_LEN
+      , BLOCK_TEXT
+      , LOWERED_TEXT
+      ) AS
+      WITH A AS (
+          SELECT T.PAGE_PHYSICAL_NUMBER
+               , T.BLOCK_NO
+               , COUNT( T.CREATED_AT ) 
+              AS VERSIONS
+               , MAX( T.CREATED_AT )   
+              AS CREATED_AT
+            FROM PAGE_BLOCK T
+           WHERE T.BLOCK_TYPE_CODE = 0
+        GROUP BY T.PAGE_PHYSICAL_NUMBER
+               , T.BLOCK_NO
+      ),
+      B AS (
+          SELECT T.PAGE_PHYSICAL_NUMBER
+               , T.BLOCK_NO
+               , T.CREATED_AT
+               , T.BLOCK_TYPE_CODE
+               , T.BLOCK_TEXT
+               , T.LOWERED_TEXT
+               , T.TEXT_LEN
+            FROM PAGE_BLOCK T
+      )
+         SELECT B.PAGE_PHYSICAL_NUMBER
+              , B.BLOCK_NO
+              , A.VERSIONS
+              , B.CREATED_AT
+              , B.BLOCK_TYPE_CODE
+              , B.TEXT_LEN
+              , B.BLOCK_TEXT
+              , B.LOWERED_TEXT
+           FROM A
+      INNER JOIN B
+              ON A.PAGE_PHYSICAL_NUMBER = B.PAGE_PHYSICAL_NUMBER
+             AND A.BLOCK_NO             = B.BLOCK_NO
+             AND A.CREATED_AT           = B.CREATED_AT
+
+  DML: null
+
+  DQL: null
+
+PageBlockTranslated:
+  RMK: see PageBlock["NAME"]
+
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: pbv
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_BLOCK_TRANSLATED
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS 
+      PAGE_BLOCK_TRANSLATED
+      ( PAGE_PHYSICAL_NUMBER   INTEGER NOT NULL
+      , BLOCK_NO               INTEGER
+      , VERSION                TEXT
+      , CREATED_AT             DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      , "IETF-BCP-47_RFC-5646" TEXT NOT NULL DEFAULT 'pt-BR' 
+            CHECK ( "IETF-BCP-47_RFC-5646" IN (
+                      'pt-BR',  -- Portuguese (Brazil)
+                      'pt-PT',  -- Portuguese (Portugal)
+                      'en-US',  -- English (United States)
+                      'en-GB',  -- English (United Kingdom)
+                      'en-AU',  -- English (Australia)
+                      'es-ES',  -- Spanish (Spain)
+                      'es-MX',  -- Spanish (Mexico)
+                      'es-AR',  -- Spanish (Argentina)
+                      'es-419', -- Spanish (Latin America)
+                      'fr-FR',  -- French (France)
+                      'fr-CA',  -- French (Canada)
+                      'de-DE',  -- German (Germany)
+                      'it-IT'   -- Italian (Italy)
+            ))
+      ---
+      , INPUT_TOKENS         INTEGER
+      , AVAILABLE_TOKENS     INTEGER
+      , DYNAMIC_MAX_TOKENS   INTEGER
+      , OUTPUT_TOKENS
+      ---
+      , BLOCK_TEXT      TEXT
+      , LOWERED_TEXT    TEXT    GENERATED ALWAYS AS (lower(BLOCK_TEXT)) VIRTUAL
+      , TEXT_LEN        INTEGER GENERATED ALWAYS AS (length(BLOCK_TEXT)) VIRTUAL
+      )
+      ;
+
+  DML: null
+
+  DQL: null
+
+PageBlockCompare:
+  RMK: see PageBlock["NAME"]
+
+  NAME: DBs/MAIN.db
+
+  CLIARG:
+    SHORT_HAND: pbv
+    DEFAULT: true
+
+  DDL:
+    DROP: |
+      DROP TABLE IF EXISTS
+      PAGE_BLOCK_COMPARE
+
+    CREATE: |
+      CREATE TABLE IF NOT EXISTS 
+      PAGE_BLOCK_COMPARE
+      AS
+          SELECT T.PAGE_PHYSICAL_NUMBER
+                , T.BLOCK_NO
+                , T.VERSION
+                , T.BLOCK_TYPE_CODE 
+                , T.CREATED_AT           AS SOURCE_CREATED_AT
+                , T.TEXT_LEN             AS SOURCE_TEXT_LEN
+                , T.BLOCK_TEXT           AS SOURCE_TEXT
+                , X."IETF-BCP-47_RFC-5646" AS TARGET_LOCALE
+                , X.CREATED_AT           AS TRANSLATED_AT
+                , X.TEXT_LEN             AS TRANSLATED_TEXT_LEN
+                , X.BLOCK_TEXT           AS TRANSLATED_TEXT
+          ---
+                , X.INPUT_TOKENS
+                , X.AVAILABLE_TOKENS
+                , X.DYNAMIC_MAX_TOKENS
+                , X.OUTPUT_TOKENS
+            FROM PAGE_BLOCK_VERSIONED T
+      INNER JOIN PAGE_BLOCK_TRANSLATED X
+              ON X.PAGE_PHYSICAL_NUMBER = T.PAGE_PHYSICAL_NUMBER
+              AND X.BLOCK_NO             = T.BLOCK_NO
+              AND X.VERSION              = T.VERSION
+            WHERE T.BLOCK_TEXT IS NOT NULL
+              AND X."IETF-BCP-47_RFC-5646" = 'pt-BR'
+        ORDER BY T.PAGE_PHYSICAL_NUMBER ASC
+                , T.BLOCK_NO ASC
+      ;
+
+  DML: null
+
+  DQL: null
 
 PageBlockFTS:
   NAME: DBs/MAIN.db

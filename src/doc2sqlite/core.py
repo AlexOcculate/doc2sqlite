@@ -105,6 +105,8 @@ class ConfigHandler:
         },  # Note: Original default was False, property returned True? Fixed to match arg default False.
         "PageFont": {"default": False, "depends_on": None},
         "PageBlock": {"default": True, "depends_on": None},
+        "PageBlockVersioned": {"default": True, "depends_on": "PageBlock"},
+        "PageBlockTranslated": {"default": True, "depends_on": "PageBlock"},
         "PageBlockFTS": {"default": False, "depends_on": "PageBlock"},
         "PageLink": {"default": True, "depends_on": None},
         "PageHtml": {"default": False, "depends_on": None},
@@ -378,6 +380,14 @@ class ConfigHandler:
 
     @property
     def PageBlock(self) -> bool:
+        return bool(self._resolve_config_value(sys._getframe().f_code.co_name))
+
+    @property
+    def PageBlockVersioned(self) -> bool:
+        return bool(self._resolve_config_value(sys._getframe().f_code.co_name))
+
+    @property
+    def PageBlockTranslated(self) -> bool:
         return bool(self._resolve_config_value(sys._getframe().f_code.co_name))
 
     @property
@@ -1109,6 +1119,42 @@ class PageBlock(BaseClass):
             self.data.append(entry)
 
         pass
+
+
+# ------------------------------------------------------- PageBlockVersioned ---
+
+
+class PageBlockVersioned(BaseClass):
+    def persist_view(self, cfg: ConfigHandler):
+        super().persist_view(cfg)
+        #
+        # I = cfg.logger.info
+        # I(f"{self.__class__.__name__}.{sys._getframe(0).f_code.co_name} (instance)")
+        # self.dbNm = cfg._stmt[self.__class__.__name__]["NAME"]
+        # # insert_into = cfg._stmt[self.__class__.__name__]["DML"]["INSERT_INTO"]
+        # obj = cfg._stmt[self.__class__.__name__]
+        # dml = obj["DML"]
+        # stmt = dml["INSERT_INTO"]
+
+        # conn: DbConn = sqlite3.connect(self.dbNm)
+
+        # conn.execute(stmt)
+        # conn.commit()
+        # conn.close()
+
+        # conn = None
+
+        pass
+
+    pass
+
+
+# ------------------------------------------------------ PageBlockTranslated ---
+
+
+class PageBlockTranslated(BaseClass):
+    def persist_view(self, cfg: ConfigHandler):
+        super().persist_view(cfg)
 
 
 # ------------------------------------------------------------ PageBlockFTS ---
@@ -2157,6 +2203,14 @@ def main():
             if cfg.PageBlockFTS:
                 pbFts = PageBlockFTS(cfg)
                 pbFts.persist_view(cfg)
+
+            if cfg.PageBlockVersioned:
+                pbVer = PageBlockVersioned(cfg)
+                pbVer.persist_view(cfg)
+
+            if cfg.PageBlockTranslated:
+                pbTrans = PageBlockTranslated(cfg)
+                pbTrans.persist_view(cfg)
 
             if cfg.DocumentFont:
                 df = DocumentFont(cfg)

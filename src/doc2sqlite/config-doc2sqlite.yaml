@@ -6,7 +6,7 @@ InputPdf: "/Users/Shared/--BOOKS--/Manning/pdf/From_Scratch/Build_a_Large_Langua
 DocumentInfo: true
 DocumentToC: true
 PagePhysical2Label: true
-PageText: false
+PageText: true
 #
 PageFont: true
 DocumentFont: true
@@ -14,28 +14,28 @@ DocumentFont: true
 PageLink: true
 DocumentLink: true
 #
-DocumentPageLabel: false
-DocEmbeddedFileInfo: false
-PageAnnotation: false
+DocumentPageLabel: true
+DocEmbeddedFileInfo: true
+PageAnnotation: true
 PageBlock: true
 PageKG: true
 PageBlockFTS: true
-PageHtml: false
-PageXHtml: false
-PageXml: false
+PageHtml: true
+PageXHtml: true
+PageXml: true
 #
 PageWord: true
 PageWordFrequency: true
 DocumentWordFrequency: true
 #
-PageDict: false
-PageRawDict: false
-PageJson: false
-PageRawJson: false
-PageSvg: false
-PageSvgTextAsPath: false
-PageTable: false
-PageImageInfo: false
-PageImage: false
-PagePixmap: false
-PageDrawings: false
+PageDict: true
+PageRawDict: true
+PageJson: true
+PageRawJson: true
+PageSvg: true
+PageSvgTextAsPath: true
+PageTable: true
+PageImageInfo: true
+PageImage: true
+PagePixmap: true
+PageDrawings: true
